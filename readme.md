@@ -1,4 +1,10 @@
-# Ambiente de Desenvolvimento
+# Extensão para Chrome no padrão PKCS11
+
+Baseada em código open-source de Sergio Leal, disponível em https://github.com/bluecrystalsign.
+
+Extensão especialmente desenvolvida para possibilitar a assinatura digital em MacOSX.
+
+### Ambiente de Desenvolvimento
 
 Diretório: ~/Library/Assijus:
 
@@ -24,7 +30,7 @@ Diretório ~/Library/Application Support/Google/Chrome/NativeMessagingHosts/
 }
 ```
 
-# Logando em arquivo
+### Logando em arquivo
 
 Mesmo conectando o debugger remoto, não é possível ver os logs no console. Portanto, é necessário configurar o SL4J para fazer output em arquivo.
 
@@ -39,7 +45,7 @@ static {
 }
 ```
 
-# Ativando o log do Chrome
+### Ativando o log do Chrome
 
 Primeiro saia do Chrome.
 
@@ -66,4 +72,3 @@ type "C:\Users\%USERNAME%\AppData\Local\Google\Chrome\User Data\chrome_debug.log
 ```
 
 Mais informações em: http://www.chromium.org/for-testers/enable-logging
-# assijus-chrome-extension-pkcs11
