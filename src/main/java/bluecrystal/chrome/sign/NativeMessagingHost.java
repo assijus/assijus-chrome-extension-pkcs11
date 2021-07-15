@@ -164,8 +164,11 @@ public class NativeMessagingHost {
 	private static String cert(RequestData req) throws Exception {
 		try {
 			current.userPIN = req.userPIN;
-			if (current.userPIN == null)
-				throw new Exception("PIN não informado");
+			if (current.userPIN == null) {
+				pcks.setStore(PkcsWrapper.STORE_APPLE);
+				current.userPIN = "";
+			}
+				//throw new Exception("PIN não informado");
 
 			String subjectRegEx = "ICP-Brasil";
 

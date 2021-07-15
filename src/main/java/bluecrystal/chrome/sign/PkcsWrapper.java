@@ -72,6 +72,7 @@ public class PkcsWrapper extends PkcsUtil {
 	public static final int STORE_PKCS11 = 0;
 	public static final int STORE_FILE_UI = 1;
 	public static final int STORE_FILE = 2;
+	public static final int STORE_APPLE = 3;
 
 	private static PkcsRef pkcsRef = new PkcsRef();
 
@@ -423,6 +424,9 @@ public class PkcsWrapper extends PkcsUtil {
 		case STORE_PKCS11:
 			loadKeyStorep11();
 			break;
+		case STORE_APPLE:
+			loadKeyStoreApple();
+			break;
 
 		default:
 			LOG.debug("opps " + this.store);
@@ -468,6 +472,19 @@ public class PkcsWrapper extends PkcsUtil {
 		}
 
 		pkcsRef.getKeyStore().load(null, userPIN.toCharArray());
+	}
+	
+	private void loadKeyStoreApple() throws KeyStoreException, IOException,NoSuchAlgorithmException, CertificateException {
+		try {
+			LOG.debug("loadKeyStoreApple");
+			pkcsRef.setKeyStore(KeyStore.getInstance("KeychainStore","Apple"));
+			LOG.debug("** FOUND!");
+			pkcsRef.getKeyStore().load(null, null);
+			LOG.debug("** LOADED!");
+			printDebug();
+		} catch (Exception e) {
+			LOG.debug("Can't load Apple KeyStore: Ex: " + e.getLocalizedMessage());
+		}
 	}
 
 	private String verifyPath(String next) {
@@ -556,11 +573,13 @@ public class PkcsWrapper extends PkcsUtil {
 			Enumeration aliasesEnum = pkcsRef.getKeyStore().aliases();
 			while (aliasesEnum.hasMoreElements()) {
 				alias = (String) aliasesEnum.nextElement();
-				Certificate cert = pkcsRef.getKeyStore().getCertificate(alias);
-				X509Certificate x509Certificate = (X509Certificate) cert;
-				RSAPublicKey rsaPubK = (RSAPublicKey) x509Certificate.getPublicKey();
-				this.listCerts.add(new CertId(alias, x509Certificate.getSubjectDN().getName(), cert.getEncoded(),
-						rsaPubK.getModulus().bitLength()));
+				if (pkcsRef.getKeyStore().isKeyEntry(alias)) { //add into list only certificate with private keys
+					Certificate cert = pkcsRef.getKeyStore().getCertificate(alias);
+					X509Certificate x509Certificate = (X509Certificate) cert;
+					RSAPublicKey rsaPubK = (RSAPublicKey) x509Certificate.getPublicKey();
+					this.listCerts.add(new CertId(alias, x509Certificate.getSubjectDN().getName(), cert.getEncoded(),
+							rsaPubK.getModulus().bitLength()));
+				}
 				numCerts++;
 			}
 
