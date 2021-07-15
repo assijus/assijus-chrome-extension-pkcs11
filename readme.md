@@ -1,14 +1,21 @@
-# Extensão para Chrome no padrão PKCS11
+# Extensão para Chrome no padrão PKCS
 
 Baseada em código open-source de Sergio Leal, disponível em https://github.com/bluecrystalsign.
 
 Extensão especialmente desenvolvida para possibilitar a assinatura digital em MacOSX.
 
+A extensão funciona com acesso nativo ao keystore PKCS11 ou via keystore da Apple, possiblitando o acesso e assinatura usando certificados A1 instalados.
+Para esse segundo, não é realizado o acesso ao arquivo PKCS12 (.p12). O certificado deve estar importado no gerenciador de chaves do Mac OS.
+
+Para escolher qual será a forma de acesso ao KeyStore, deve ser informado ao método /cert o parâmetro keystore, caso o contrário o default é usar o PKCS11.
+
+* keystore : "APPLE"
+
 ### Ambiente de Desenvolvimento
 
 Diretório: ~/Library/Assijus:
 
-* bluecrystal.client.chrome.pkcs11-1.0.0.one-jar.jar
+* bluecrystal.client.chrome.pkcs-2.0.0.one-jar.jar
 * start.sh com o seguinte conteúdo:
 
 ```
