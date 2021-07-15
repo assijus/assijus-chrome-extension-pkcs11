@@ -12,11 +12,11 @@ import javax.security.auth.login.LoginException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sun.security.pkcs11.wrapper.PKCS11Exception;
-import bluecrystal.deps.pkcs11.util.Base64Coder;
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+
+import bluecrystal.deps.pkcs.util.Base64Coder;
+import sun.security.pkcs11.wrapper.PKCS11Exception;
 
 public class NativeMessagingHost {
 	// static {
@@ -25,8 +25,7 @@ public class NativeMessagingHost {
 	// System.setProperty(org.slf4j.impl.SimpleLogger.LOG_FILE_KEY,
 	// "~/Library/Assijus/log.txt");
 	// }
-	static final Logger LOG = LoggerFactory
-			.getLogger(NativeMessagingHost.class);
+	static final Logger LOG = LoggerFactory.getLogger(NativeMessagingHost.class);
 
 	static class CurrentCert {
 		String alias = null;
@@ -38,13 +37,12 @@ public class NativeMessagingHost {
 
 	public static CurrentCert current = new CurrentCert();
 
-	private static Pkcs11Wrapper p11 = null;
+	private static PkcsWrapper pcks = null;
 
 	public static void main(String[] args) throws Exception {
 		// TODO: esse init deve ser executado pelo GET de um método chamado
 		// /init
-		p11 = new Pkcs11Wrapper(
-				"aetpkss1.dll;eTPKCS11.dll;asepkcs.dll;libaetpkss.dylib;libeTPkcs11.dylib",
+		pcks = new PkcsWrapper("aetpkss1.dll;eTPKCS11.dll;asepkcs.dll;libaetpkss.dylib;libeTPkcs11.dylib",
 				"/usr/local/lib");
 		for (;;) {
 
@@ -70,8 +68,8 @@ public class NativeMessagingHost {
 	}
 
 	private static int getInt(byte[] bytes) {
-		return (bytes[3] << 24) & 0xff000000 | (bytes[2] << 16) & 0x00ff0000
-				| (bytes[1] << 8) & 0x0000ff00 | (bytes[0] << 0) & 0x000000ff;
+		return (bytes[3] << 24) & 0xff000000 | (bytes[2] << 16) & 0x00ff0000 | (bytes[1] << 8) & 0x0000ff00
+				| (bytes[0] << 0) & 0x000000ff;
 	}
 
 	private static byte[] getBytes(int length) {
@@ -106,8 +104,7 @@ public class NativeMessagingHost {
 	private static String run(String msg) {
 		String jsonOut = "";
 		try {
-			GenericRequest genericrequest = gson.fromJson(msg,
-					GenericRequest.class);
+			GenericRequest genericrequest = gson.fromJson(msg, GenericRequest.class);
 
 			if (genericrequest.url.endsWith("/test"))
 				jsonOut = test();
@@ -125,18 +122,16 @@ public class NativeMessagingHost {
 		} catch (Exception ex) {
 			// LOG.error("Mensagem não pode ser processada", ex);
 			String message = ex.getMessage();
-			if (message != null
-					&& message.startsWith("O conjunto de chaves não"))
+			if (message != null && message.startsWith("O conjunto de chaves não"))
 				message = "Não localizamos nenhum Token válido no computador. Por favor, verifique se foi corretamente inserido.";
-			return "{\"success\":false,\"status\":500,\"data\":{\"errormsg\":\""
-					+ jsonStringSafe(message) + "\"}}";
+			return "{\"success\":false,\"status\":500,\"data\":{\"errormsg\":\"" + jsonStringSafe(message) + "\"}}";
 		}
 	}
 
 	private static String test() {
 		TestResponse testresponse = new TestResponse();
-		testresponse.provider = "Assijus Signer Extension - PKCS#11";
-		testresponse.version = "1.2.9.0-P11";
+		testresponse.provider = "Assijus Signer Extension - PKCS";
+		testresponse.version = "2.0.0-PKCS";
 		testresponse.status = "OK";
 		return gson.toJson(testresponse);
 	}
@@ -180,7 +175,7 @@ public class NativeMessagingHost {
 
 			CertificateResponse certificateresponse = new CertificateResponse();
 
-			String json = listCerts(p11);
+			String json = listCerts(pcks);
 
 			Type listType = new TypeToken<List<AliasAndSubject>>() {
 			}.getType();
@@ -195,8 +190,7 @@ public class NativeMessagingHost {
 			}
 			if (filteredlist.size() == 0) {
 				for (AliasAndSubject aas : list) {
-					if (aas.subject != null
-							&& aas.subject.contains(subjectRegEx))
+					if (aas.subject != null && aas.subject.contains(subjectRegEx))
 						filteredlist.add(aas);
 				}
 			}
@@ -206,8 +200,8 @@ public class NativeMessagingHost {
 			} else if (filteredlist.size() == 1) {
 				current.alias = filteredlist.get(0).alias;
 				current.subject = filteredlist.get(0).subject;
-				current.certificate = p11.getCert(current.alias);
-				current.keySize = p11.getKeySize(current.alias);
+				current.certificate = pcks.getCert(current.alias);
+				current.keySize = pcks.getKeySize(current.alias);
 				certificateresponse.certificate = current.certificate;
 				certificateresponse.subject = current.subject;
 			} else if (filteredlist.size() > 1) {
@@ -245,7 +239,7 @@ public class NativeMessagingHost {
 					LOG.debug("tentanto gerar token.");
 					int alg = 99;
 
-					tokenresponse.sign = p11Sign(p11, alg, payloadAsString);
+					tokenresponse.sign = pcksSign(pcks, alg, payloadAsString);
 					break;
 				} catch (Exception e) {
 					if (i > 10)
@@ -287,7 +281,7 @@ public class NativeMessagingHost {
 						alg = 0;
 					else
 						alg = 2;
-					signresponse.sign = p11Sign(p11, alg, req.payload);
+					signresponse.sign = pcksSign(pcks, alg, req.payload);
 					break;
 				} catch (Exception e) {
 					if (i > 10)
@@ -322,25 +316,23 @@ public class NativeMessagingHost {
 		return null;
 	}
 
-	public static String listCerts(Pkcs11Wrapper p11wrap) throws Exception {
+	public static String listCerts(PkcsWrapper pWrap) throws Exception {
 		try {
-			p11wrap.setUserPIN(current.userPIN);
-			p11wrap.loadKeyStore();
-			p11wrap.setUserPIN(current.userPIN);
-			p11wrap.refreshCerts();
-			p11wrap.setStore(0);
+			pWrap.setUserPIN(current.userPIN);
+			pWrap.loadKeyStore();
+			pWrap.setUserPIN(current.userPIN);
+			pWrap.refreshCerts();
+			pWrap.setStore(0);
 
 			String ret = "";
-			String json = p11wrap.loadCertsJson();
+			String json = pWrap.loadCertsJson();
 			return json;
 		} catch (Exception e) {
 			LOG.error("can't load que keystore", e);
 			if (e instanceof IOException) {
-				if (e.getCause() != null
-						&& e.getCause() instanceof FailedLoginException
+				if (e.getCause() != null && e.getCause() instanceof FailedLoginException
 						|| e.getCause() instanceof LoginException) {
-					if (e.getCause().getCause() != null
-							&& e.getCause().getCause() instanceof PKCS11Exception) {
+					if (e.getCause().getCause() != null && e.getCause().getCause() instanceof PKCS11Exception) {
 						throw (PKCS11Exception) e.getCause().getCause();
 					}
 				}
@@ -349,15 +341,14 @@ public class NativeMessagingHost {
 		}
 	}
 
-	public static String p11Sign(Pkcs11Wrapper p11, int alg, String payload)
-			throws Exception {
-		p11.setUserPIN(current.userPIN);
-		p11.setCertAlias(current.alias);
-		p11.setOrig(payload);
-		p11.setAlg(alg);
-		p11.setStore(0);
-		p11.sign();
-		String ret = p11.getResult();
+	public static String pcksSign(PkcsWrapper pcks, int alg, String payload) throws Exception {
+		pcks.setUserPIN(current.userPIN);
+		pcks.setCertAlias(current.alias);
+		pcks.setOrig(payload);
+		pcks.setAlg(alg);
+		pcks.setStore(0);
+		pcks.sign();
+		String ret = pcks.getResult();
 		return ret;
 	}
 

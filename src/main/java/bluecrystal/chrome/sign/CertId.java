@@ -24,10 +24,10 @@ public class CertId {
 	private byte[] encoded;
 	private int keySize;
 
-
 	public byte[] getEncoded() {
 		return encoded;
 	}
+
 //	public CertId(String alias, String subjectDn, byte[] encoded, ) {
 //		super();
 //		this.alias = alias;
@@ -37,12 +37,15 @@ public class CertId {
 	public String getAlias() {
 		return alias;
 	}
+
 	public int getKeySize() {
 		return keySize;
 	}
+
 	public String getSubjectDn() {
 		return subjectDn;
 	}
+
 	public CertId(String alias, String subjectDn, byte[] encoded, int keySize) {
 		super();
 		this.alias = alias;
@@ -51,5 +54,4 @@ public class CertId {
 		this.keySize = keySize;
 	}
 
-	
 }

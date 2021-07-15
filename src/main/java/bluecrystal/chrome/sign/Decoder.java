@@ -19,34 +19,35 @@
 package bluecrystal.chrome.sign;
 
 public class Decoder {
-	public static byte[] convHexToByte(String content)  {
+	public static byte[] convHexToByte(String content) {
 		byte[] signbyte;
 		content = content.trim();
 		String[] signList = splitHex(content);
 		signbyte = conv(signList);
 		return signbyte;
 	}
-	
-	public static String conv(byte[] byteArray){
+
+	public static String conv(byte[] byteArray) {
 		StringBuffer result = new StringBuffer();
-		for (byte b:byteArray) {
-		    result.append(String.format("%02X", b));
+		for (byte b : byteArray) {
+			result.append(String.format("%02X", b));
 		}
 		return result.toString();
 	}
-	
+
 	private static String[] splitHex(String content) {
 		String[] ret = null;
 		int len = content.length();
-		if(len % 2 == 0){
-			ret = new String[len/2];
-			for(int i = 0; i < len/2; i++){
-				ret[i] = content.substring(i*2, (i+1)*2);
+		if (len % 2 == 0) {
+			ret = new String[len / 2];
+			for (int i = 0; i < len / 2; i++) {
+				ret[i] = content.substring(i * 2, (i + 1) * 2);
 			}
 		}
-			
+
 		return ret;
 	}
+
 	private static byte[] conv(String[] certList) {
 		byte[] certbyte = new byte[certList.length];
 
@@ -55,6 +56,7 @@ public class Decoder {
 		}
 		return certbyte;
 	}
+
 	private static byte conv(String hex) {
 		int i = Integer.parseInt(hex, 16);
 		byte c = (byte) i;
