@@ -26,12 +26,17 @@ public class NativeMessagingHost {
 	// "~/Library/Assijus/log.txt");
 	// }
 	static final Logger LOG = LoggerFactory.getLogger(NativeMessagingHost.class);
+	
+	public enum KeystoreInstance  {
+	    PKCS11, PKCS12, APPLE;
+	}
 
 	static class CurrentCert {
 		String alias = null;
 		String certificate = null;
 		String subject = null;
 		String userPIN = null;
+		KeystoreInstance keystoreInstance = KeystoreInstance.PKCS11; //default 
 		int keySize = 0;
 	}
 
@@ -164,18 +169,28 @@ public class NativeMessagingHost {
 	private static String cert(RequestData req) throws Exception {
 		try {
 			current.userPIN = req.userPIN;
-			if (current.userPIN == null) {
-				pcks.setStore(PkcsWrapper.STORE_APPLE);
-				current.userPIN = "";
-			}
-				//throw new Exception("PIN não informado");
+			
+			if (req.keystore != null)
+				current.keystoreInstance = KeystoreInstance.valueOf(req.keystore);
 
+			if (!current.keystoreInstance.equals(KeystoreInstance.APPLE)) {
+				if (current.userPIN == null) {
+					throw new Exception("PIN não informado");
+				}
+			}
+			
 			String subjectRegEx = "ICP-Brasil";
 
 			if (req != null && sorn(req.subject) != null) {
 				subjectRegEx = req.subject;
 			}
-
+			
+			if (current.keystoreInstance.equals(KeystoreInstance.APPLE)) {
+				pcks.setStore(PkcsWrapper.STORE_APPLE);
+			} else {
+				pcks.setStore(PkcsWrapper.STORE_PKCS11);
+			}
+			
 			CertificateResponse certificateresponse = new CertificateResponse();
 
 			String json = listCerts(pcks);
@@ -220,8 +235,11 @@ public class NativeMessagingHost {
 
 	private static String token(RequestData req) throws Exception {
 		try {
-			if (current.userPIN == null)
-				throw new Exception("PIN não informado");
+			if (!current.keystoreInstance.equals(KeystoreInstance.APPLE)) {
+				if (current.userPIN == null) {
+					throw new Exception("PIN não informado");
+				}
+			}
 
 			if (req.subject != null) {
 				String s = getCertificateBySubject(req.subject);
@@ -265,8 +283,11 @@ public class NativeMessagingHost {
 
 	private static String sign(RequestData req) throws Exception {
 		try {
-			if (current.userPIN == null)
-				throw new Exception("PIN não informado");
+			if (!current.keystoreInstance.equals(KeystoreInstance.APPLE)) {
+				if (current.userPIN == null) {
+					throw new Exception("PIN não informado");
+				}
+			}
 
 			if (req.subject == null) {
 				String s = getCertificateBySubject(req.subject);
@@ -311,6 +332,7 @@ public class NativeMessagingHost {
 		current.certificate = null;
 		current.subject = null;
 		current.userPIN = null;
+		current.keystoreInstance = KeystoreInstance.PKCS11;
 		current.keySize = 0;
 	}
 
@@ -325,7 +347,6 @@ public class NativeMessagingHost {
 			pWrap.loadKeyStore();
 			pWrap.setUserPIN(current.userPIN);
 			pWrap.refreshCerts();
-			pWrap.setStore(0);
 
 			String ret = "";
 			String json = pWrap.loadCertsJson();
@@ -349,7 +370,6 @@ public class NativeMessagingHost {
 		pcks.setCertAlias(current.alias);
 		pcks.setOrig(payload);
 		pcks.setAlg(alg);
-		pcks.setStore(0);
 		pcks.sign();
 		String ret = pcks.getResult();
 		return ret;
@@ -384,6 +404,7 @@ public class NativeMessagingHost {
 		String code;
 		String token;
 		String userPIN;
+		String keystore;
 	}
 
 	private static class GenericRequest {

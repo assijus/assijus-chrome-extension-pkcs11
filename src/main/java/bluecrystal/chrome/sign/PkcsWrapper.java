@@ -178,21 +178,25 @@ public class PkcsWrapper extends PkcsUtil {
 
 		LOG.debug("sign");
 		switch (this.store) {
-		case STORE_PKCS11:
-			signp11();
-			break;
-
-		case STORE_FILE_UI:
-			signFile();
-			break;
-
-		case STORE_FILE:
-			signFile();
-			break;
-
-		default:
-			LOG.debug("opps " + this.store);
-			break;
+			case STORE_PKCS11:
+				signpkcs();
+				break;
+				
+			case STORE_APPLE:
+				signpkcs();
+				break;
+	
+			case STORE_FILE_UI:
+				signFile();
+				break;
+	
+			case STORE_FILE:
+				signFile();
+				break;
+	
+			default:
+				LOG.debug("opps " + this.store);
+				break;
 		}
 	}
 
@@ -257,16 +261,16 @@ public class PkcsWrapper extends PkcsUtil {
 		LOG.debug("result:" + result);
 	}
 
-	private void signp11() throws Exception {
+	private void signpkcs() throws Exception {
 		if (this.alg != ALG_NO_SP) {
-			signp11SignPol();
+			signpkcsSignPol();
 		} else {
-			signp11NoSignPol();
+			signpkcsNoSignPol();
 		}
 		// Security.removeProvider(pkcs11Ref.getPkcs11Provider().getName());
 	}
 
-	private void signp11NoSignPol() throws Exception {
+	private void signpkcsNoSignPol() throws Exception {
 
 		// LOAD CERT
 		PrivateKey privateKey = (PrivateKey) pkcsRef.getKeyStore().getKey(this.getCertAlias(), "".toCharArray());
@@ -373,7 +377,7 @@ public class PkcsWrapper extends PkcsUtil {
 		return chainX509;
 	}
 
-	private void signp11SignPol() throws Exception {
+	private void signpkcsSignPol() throws Exception {
 
 		// LOAD CERT
 		PrivateKey privateKey = (PrivateKey) pkcsRef.getKeyStore().getKey(this.getCertAlias(), "".toCharArray());
@@ -421,16 +425,16 @@ public class PkcsWrapper extends PkcsUtil {
 	void loadKeyStore() throws Exception {
 		LOG.debug("loadKeyStore");
 		switch (this.store) {
-		case STORE_PKCS11:
-			loadKeyStorep11();
-			break;
-		case STORE_APPLE:
-			loadKeyStoreApple();
-			break;
-
-		default:
-			LOG.debug("opps " + this.store);
-			break;
+			case STORE_PKCS11:
+				loadKeyStorep11();
+				break;
+			case STORE_APPLE:
+				loadKeyStoreApple();
+				break;
+	
+			default:
+				LOG.debug("opps " + this.store);
+				break;
 		}
 	}
 
@@ -629,25 +633,27 @@ public class PkcsWrapper extends PkcsUtil {
 
 		LOG.debug("sign");
 		switch (this.store) {
-		case STORE_PKCS11:
-			skeyDercyptP11();
-			break;
-
-		case STORE_FILE_UI:
-			skeyDercyptFile();
-			break;
-
-		case STORE_FILE:
-			skeyDercyptFile();
-			break;
-
-		default:
-			LOG.debug("opps " + this.store);
-			break;
+			case STORE_PKCS11:
+				skeyDercyptPkcs();
+				break;
+			case STORE_APPLE:
+				skeyDercyptPkcs();
+				break;
+			case STORE_FILE_UI:
+				skeyDercyptFile();
+				break;
+	
+			case STORE_FILE:
+				skeyDercyptFile();
+				break;
+	
+			default:
+				LOG.debug("opps " + this.store);
+				break;
 		}
 	}
 
-	private void skeyDercyptP11() throws Exception {
+	private void skeyDercyptPkcs() throws Exception {
 
 		PrivateKey privateKey = (PrivateKey) pkcsRef.getKeyStore().getKey(this.getCertAlias(), "".toCharArray());
 
