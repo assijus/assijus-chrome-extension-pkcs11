@@ -9,7 +9,7 @@ public class PkcsRef {
 	private String PKCSLibrary = null;
 	private String configString = null;
 	private ByteArrayInputStream configStream = null;
-	private KeyStore keyStore = null;
+	private KeyStore keyStore = null; //TODO: Avaliar de tornar-se um list para permitir vários keystore simultâneo
 	private Provider pkcsProvider = null;
 
 	public String getPKCSLibrary() {

@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 import bluecrystal.deps.pkcs.util.Base64Coder;
@@ -26,28 +27,24 @@ public class NativeMessagingHost {
 	// "~/Library/Assijus/log.txt");
 	// }
 	static final Logger LOG = LoggerFactory.getLogger(NativeMessagingHost.class);
-	
-	public enum KeystoreInstance  {
-	    PKCS11, PKCS12, APPLE;
-	}
 
 	static class CurrentCert {
 		String alias = null;
 		String certificate = null;
 		String subject = null;
 		String userPIN = null;
-		KeystoreInstance keystoreInstance = KeystoreInstance.PKCS11; //default 
+		KeystoreInstanceEnum keystoreInstance = KeystoreInstanceEnum.PKCS11; //default 
 		int keySize = 0;
 	}
 
 	public static CurrentCert current = new CurrentCert();
 
-	private static PkcsWrapper pcks = null;
+	private static PkcsWrapper pkcs = null;
 
 	public static void main(String[] args) throws Exception {
 		// TODO: esse init deve ser executado pelo GET de um método chamado
 		// /init
-		pcks = new PkcsWrapper("aetpkss1.dll;eTPKCS11.dll;asepkcs.dll;libaetpkss.dylib;libeTPkcs11.dylib",
+		pkcs = new PkcsWrapper("aetpkss1.dll;eTPKCS11.dll;asepkcs.dll;libaetpkss.dylib;libeTPkcs11.dylib",
 				"/usr/local/lib");
 		for (;;) {
 
@@ -121,6 +118,8 @@ public class NativeMessagingHost {
 				jsonOut = token(genericrequest.data);
 			else if (genericrequest.url.endsWith("/sign"))
 				jsonOut = sign(genericrequest.data);
+			else if (genericrequest.url.endsWith("/clearcurrentcert"))
+				jsonOut = clearCurrentCertificateRequest(genericrequest.data);
 			else
 				return "{\"success\":false,\"data\":{\"errormsg\":\"Error 404: file not found\"}}";
 			return "{\"success\":true,\"data\":" + jsonOut + "}";
@@ -133,11 +132,30 @@ public class NativeMessagingHost {
 		}
 	}
 
+	private static String clearCurrentCertificateRequest(RequestData data) {
+		GenericResponse response = new GenericResponse();
+		clearCurrentCertificate();
+		
+		response.errormsg = "OK";
+		return gson.toJson(response);
+	}
+
 	private static String test() {
 		TestResponse testresponse = new TestResponse();
 		testresponse.provider = "Assijus Signer Extension - PKCS";
 		testresponse.version = "2.0.0-PKCS";
 		testresponse.status = "OK";
+		testresponse.clearCurrentCertificateEnabled = true;
+		
+		List<KeystoreInstanceEnum> list = new ArrayList<KeystoreInstanceEnum>();
+		list.add(KeystoreInstanceEnum.PKCS11);
+		list.add(KeystoreInstanceEnum.APPLE);
+		testresponse.keystoreSupported = list;
+		
+		GsonBuilder builder = new GsonBuilder();
+		builder.registerTypeAdapterFactory(new EnumAdapterFactory());
+		Gson gson = builder.create();
+		
 		return gson.toJson(testresponse);
 	}
 
@@ -171,9 +189,9 @@ public class NativeMessagingHost {
 			current.userPIN = req.userPIN;
 			
 			if (req.keystore != null)
-				current.keystoreInstance = KeystoreInstance.valueOf(req.keystore);
+				current.keystoreInstance = KeystoreInstanceEnum.valueOf(req.keystore);
 
-			if (!current.keystoreInstance.equals(KeystoreInstance.APPLE)) {
+			if (!current.keystoreInstance.equals(KeystoreInstanceEnum.APPLE)) {
 				if (current.userPIN == null) {
 					throw new Exception("PIN não informado");
 				}
@@ -185,15 +203,15 @@ public class NativeMessagingHost {
 				subjectRegEx = req.subject;
 			}
 			
-			if (current.keystoreInstance.equals(KeystoreInstance.APPLE)) {
-				pcks.setStore(PkcsWrapper.STORE_APPLE);
+			if (current.keystoreInstance.equals(KeystoreInstanceEnum.APPLE)) {
+				pkcs.setStore(PkcsWrapper.STORE_APPLE);
 			} else {
-				pcks.setStore(PkcsWrapper.STORE_PKCS11);
+				pkcs.setStore(PkcsWrapper.STORE_PKCS11);
 			}
 			
 			CertificateResponse certificateresponse = new CertificateResponse();
 
-			String json = listCerts(pcks);
+			String json = listCerts(pkcs);
 
 			Type listType = new TypeToken<List<AliasAndSubject>>() {
 			}.getType();
@@ -218,8 +236,8 @@ public class NativeMessagingHost {
 			} else if (filteredlist.size() == 1) {
 				current.alias = filteredlist.get(0).alias;
 				current.subject = filteredlist.get(0).subject;
-				current.certificate = pcks.getCert(current.alias);
-				current.keySize = pcks.getKeySize(current.alias);
+				current.certificate = pkcs.getCert(current.alias);
+				current.keySize = pkcs.getKeySize(current.alias);
 				certificateresponse.certificate = current.certificate;
 				certificateresponse.subject = current.subject;
 			} else if (filteredlist.size() > 1) {
@@ -235,7 +253,7 @@ public class NativeMessagingHost {
 
 	private static String token(RequestData req) throws Exception {
 		try {
-			if (!current.keystoreInstance.equals(KeystoreInstance.APPLE)) {
+			if (!current.keystoreInstance.equals(KeystoreInstanceEnum.APPLE)) {
 				if (current.userPIN == null) {
 					throw new Exception("PIN não informado");
 				}
@@ -260,7 +278,7 @@ public class NativeMessagingHost {
 					LOG.debug("tentanto gerar token.");
 					int alg = 99;
 
-					tokenresponse.sign = pcksSign(pcks, alg, payloadAsString);
+					tokenresponse.sign = pcksSign(pkcs, alg, payloadAsString);
 					break;
 				} catch (Exception e) {
 					if (i > 10)
@@ -283,7 +301,7 @@ public class NativeMessagingHost {
 
 	private static String sign(RequestData req) throws Exception {
 		try {
-			if (!current.keystoreInstance.equals(KeystoreInstance.APPLE)) {
+			if (!current.keystoreInstance.equals(KeystoreInstanceEnum.APPLE)) {
 				if (current.userPIN == null) {
 					throw new Exception("PIN não informado");
 				}
@@ -305,7 +323,7 @@ public class NativeMessagingHost {
 						alg = 0;
 					else
 						alg = 2;
-					signresponse.sign = pcksSign(pcks, alg, req.payload);
+					signresponse.sign = pcksSign(pkcs, alg, req.payload);
 					break;
 				} catch (Exception e) {
 					if (i > 10)
@@ -332,7 +350,7 @@ public class NativeMessagingHost {
 		current.certificate = null;
 		current.subject = null;
 		current.userPIN = null;
-		current.keystoreInstance = KeystoreInstance.PKCS11;
+		current.keystoreInstance = KeystoreInstanceEnum.PKCS11;
 		current.keySize = 0;
 	}
 
@@ -420,7 +438,9 @@ public class NativeMessagingHost {
 		String provider;
 		String version;
 		String status;
+		Boolean clearCurrentCertificateEnabled;
 		String errormsg;
+		List<KeystoreInstanceEnum> keystoreSupported;
 	}
 
 	private static class CertificateResponse {
