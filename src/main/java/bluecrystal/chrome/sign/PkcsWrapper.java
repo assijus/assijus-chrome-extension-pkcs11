@@ -33,6 +33,8 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
@@ -578,13 +580,17 @@ public class PkcsWrapper extends PkcsUtil {
 			Enumeration aliasesEnum = pkcsRef.getKeyStore().aliases();
 			while (aliasesEnum.hasMoreElements()) {
 				alias = (String) aliasesEnum.nextElement();
-				//if (pkcsRef.getKeyStore().isKeyEntry(alias)) { //add into list only certificate with private keys
+
+				if (pkcsRef.getKeyStore().isKeyEntry(alias)) { //add into list only certificate with private keys
 					Certificate cert = pkcsRef.getKeyStore().getCertificate(alias);
 					X509Certificate x509Certificate = (X509Certificate) cert;
-					RSAPublicKey rsaPubK = (RSAPublicKey) x509Certificate.getPublicKey();
-					this.listCerts.add(new CertId(alias, x509Certificate.getSubjectDN().getName(), cert.getEncoded(),
-							rsaPubK.getModulus().bitLength()));
-				//}
+					
+					if (isCertValid(x509Certificate)) {
+						RSAPublicKey rsaPubK = (RSAPublicKey) x509Certificate.getPublicKey();
+						this.listCerts.add(new CertId(alias, x509Certificate.getSubjectDN().getName(), cert.getEncoded(),
+								rsaPubK.getModulus().bitLength()));
+					}
+				}
 				numCerts++;
 			}
 
@@ -592,6 +598,19 @@ public class PkcsWrapper extends PkcsUtil {
 			LOG.error("can't refreshCerts", e);
 		}
 
+	}
+	
+	public boolean isCertValid(X509Certificate x509Certificate) {
+		try {
+			x509Certificate.checkValidity();
+			return true;
+		}
+		catch (CertificateExpiredException e) {
+			return false;
+		}
+		catch (CertificateNotYetValidException e) {
+			return false;
+		}
 	}
 
 	public String getCert(String alias) {
