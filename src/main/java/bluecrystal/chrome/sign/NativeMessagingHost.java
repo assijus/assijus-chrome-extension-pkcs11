@@ -44,6 +44,7 @@ public class NativeMessagingHost {
 	public static void main(String[] args) throws Exception {
 		// TODO: esse init deve ser executado pelo GET de um método chamado
 		// /init
+		
 		pkcs = new PkcsWrapper("aetpkss1.dll;eTPKCS11.dll;asepkcs.dll;libaetpkss.dylib;libeTPkcs11.dylib",
 				"/usr/local/lib");
 		for (;;) {
@@ -142,8 +143,8 @@ public class NativeMessagingHost {
 
 	private static String test() {
 		TestResponse testresponse = new TestResponse();
-		testresponse.provider = "Assijus Signer Extension - PKCS";
-		testresponse.version = "2.0.0-PKCS";
+		testresponse.provider = "Assijus Signer Extension - PKCS Mac OS";
+		testresponse.version = "2.0.0";
 		testresponse.status = "OK";
 		testresponse.clearCurrentCertificateEnabled = true;
 		
