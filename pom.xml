@@ -2,16 +2,22 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>bluecrystal.client</groupId>
-	<artifactId>bluecrystal.client.chrome.pkcs11</artifactId>
-	<version>1.0.0</version>
+	<artifactId>bluecrystal.client.chrome.pkcs</artifactId>
+	<version>2.0.0</version>
 
-	<parent>
-		<groupId>org.codehaus.mojo</groupId>
-		<artifactId>bluecrystal-parent</artifactId>
-		<version>2.0</version>
-		<relativePath>..</relativePath>
-	</parent>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+	</properties>
+	
 	<dependencies>
+		<!-- https://mvnrepository.com/artifact/al.bluecryst/bluecrystal -->
+		<dependency>
+		    <groupId>al.bluecryst</groupId>
+		    <artifactId>bluecrystal</artifactId>
+		    <version>2.3.4</version>
+		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
@@ -26,6 +32,13 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
 			<version>1.7.21</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/junit/junit -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
@@ -53,7 +66,7 @@
 							<Permissions>all-permissions</Permissions>
 							<Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
 							<Caller-Allowable-Codebase>*</Caller-Allowable-Codebase>
-							<Application-Name>BluC Chrome Extension PKCS#11</Application-Name>
+							<Application-Name>BluC Chrome Extension PKCS</Application-Name>
 						</manifestEntries>
 					</archive>
 				</configuration>
