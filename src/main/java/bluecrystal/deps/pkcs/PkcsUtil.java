@@ -10,12 +10,10 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 
 public class PkcsUtil {
 	static final Logger LOG = LoggerFactory.getLogger(PkcsUtil.class);
@@ -40,13 +38,11 @@ public class PkcsUtil {
 		Signature sig = Signature.getInstance(DIGITAL_SIGNATURE_ALGORITHM_NAME[alg]);
 		sig.initSign(privateKey);
 
-		BASE64Decoder b64dec = new BASE64Decoder();
-		BASE64Encoder b64enc = new BASE64Encoder();
-		byte[] decodeOrig = b64dec.decodeBuffer(orig);
+		byte[] decodeOrig = Base64.getDecoder().decode(orig);
 		sig.update(decodeOrig);
 		byte[] dataSignature = sig.sign();
 
-		String result = b64enc.encode(dataSignature);
+		String result = Base64.getEncoder().encodeToString(dataSignature);
 		LOG.debug("Assinatura: ");
 		LOG.debug(result);
 

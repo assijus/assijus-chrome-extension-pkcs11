@@ -38,6 +38,7 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
@@ -54,9 +55,6 @@ import org.slf4j.LoggerFactory;
 import bluecrystal.deps.pkcs.PkcsRef;
 import bluecrystal.deps.pkcs.PkcsUtil;
 import bluecrystal.deps.pkcs.PkiHelper;
-import bluecrystal.deps.pkcs.util.Base64Coder;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.SignerInfo;
@@ -231,9 +229,7 @@ public class PkcsWrapper extends PkcsUtil {
 		Signature sig = Signature.getInstance(DIGITAL_SIGNATURE_ALGORITHM_NAME[0]);
 		// sha1 only
 		sig.initSign(privateKey);
-		BASE64Decoder b64dec = new BASE64Decoder();
-		BASE64Encoder b64enc = new BASE64Encoder();
-		sig.update(b64dec.decodeBuffer(orig));
+		sig.update(Base64.getDecoder().decode(orig));
 		byte[] signedData = sig.sign();
 
 		// load X500Name
@@ -259,7 +255,7 @@ public class PkcsWrapper extends PkcsUtil {
 		p7.encodeSignedData(bOut);
 		byte[] encodedPKCS7 = bOut.toByteArray();
 
-		result = b64enc.encode(encodedPKCS7);
+		result = Base64.getEncoder().encodeToString(encodedPKCS7);
 		LOG.debug("result:" + result);
 	}
 
@@ -281,9 +277,7 @@ public class PkcsWrapper extends PkcsUtil {
 		Signature sig = Signature.getInstance(DIGITAL_SIGNATURE_ALGORITHM_NAME[0]);
 		// sha1 only
 		sig.initSign(privateKey);
-		BASE64Decoder b64dec = new BASE64Decoder();
-		BASE64Encoder b64enc = new BASE64Encoder();
-		sig.update(b64dec.decodeBuffer(orig));
+		sig.update(Base64.getDecoder().decode(orig));
 		byte[] signedData = sig.sign();
 
 		// load X500Name
@@ -309,7 +303,7 @@ public class PkcsWrapper extends PkcsUtil {
 		p7.encodeSignedData(bOut);
 		byte[] encodedPKCS7 = bOut.toByteArray();
 
-		result = b64enc.encode(encodedPKCS7);
+		result = Base64.getEncoder().encodeToString(encodedPKCS7);
 	}
 
 	// private void signp11NoSignPolWithChain() {
@@ -619,7 +613,7 @@ public class PkcsWrapper extends PkcsUtil {
 		for (CertId next : this.listCerts) {
 			debugPrn(next.getAlias());
 			if (next.getAlias().compareToIgnoreCase(alias) == 0) {
-				return new String(Base64Coder.encode(next.getEncoded()));
+				return Base64.getEncoder().encodeToString(next.getEncoded());
 			}
 		}
 		return null;
@@ -677,19 +671,19 @@ public class PkcsWrapper extends PkcsUtil {
 
 		PrivateKey privateKey = (PrivateKey) pkcsRef.getKeyStore().getKey(this.getCertAlias(), "".toCharArray());
 
-		byte[] origBin = (new BASE64Decoder()).decodeBuffer(this.orig);
+		byte[] origBin = Base64.getDecoder().decode(this.orig);
 
 		SecretKey Skey = decryptAESKey(origBin, privateKey);
-		this.result = new String((new BASE64Encoder()).encode(Skey.getEncoded()));
+		this.result = Base64.getEncoder().encodeToString(Skey.getEncoded());
 	}
 
 	private void skeyDercyptFile() throws Exception {
 
 		PrivateKey privateKey = PkiHelper.loadPrivFromP12(this.lastFilePath, this.userPIN);
-		byte[] origBin = (new BASE64Decoder()).decodeBuffer(this.orig);
+		byte[] origBin = Base64.getDecoder().decode(this.orig);
 
 		SecretKey Skey = decryptAESKey(origBin, privateKey);
-		this.result = new String((new BASE64Encoder()).encode(Skey.getEncoded()));
+		this.result = Base64.getEncoder().encodeToString(Skey.getEncoded());
 	}
 
 	public static String conv(byte[] byteArray) {
