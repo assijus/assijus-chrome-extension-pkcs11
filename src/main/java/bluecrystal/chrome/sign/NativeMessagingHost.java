@@ -144,7 +144,7 @@ public class NativeMessagingHost {
 	private static String test() {
 		TestResponse testresponse = new TestResponse();
 		testresponse.provider = "Assijus Signer Extension - PKCS Mac OS";
-		testresponse.version = "2.0.0";
+		testresponse.version = "2.0.1";
 		testresponse.status = "OK";
 		testresponse.clearCurrentCertificateEnabled = true;
 		
