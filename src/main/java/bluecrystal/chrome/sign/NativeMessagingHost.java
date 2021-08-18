@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import javax.security.auth.login.FailedLoginException;
@@ -16,16 +17,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
-import bluecrystal.deps.pkcs.util.Base64Coder;
 import sun.security.pkcs11.wrapper.PKCS11Exception;
 
 public class NativeMessagingHost {
-	// static {
-	// System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY,
-	// "DEBUG");
-	// System.setProperty(org.slf4j.impl.SimpleLogger.LOG_FILE_KEY,
-	// "~/Library/Assijus/log.txt");
-	// }
+	/*
+	 * static {
+	 * System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY,
+	 * "DEBUG"); System.setProperty(org.slf4j.impl.SimpleLogger.LOG_FILE_KEY,
+	 * System.getProperty("user.home") + "/Library/Assijus/log.txt"); }
+	 */
 	static final Logger LOG = LoggerFactory.getLogger(NativeMessagingHost.class);
 
 	static class CurrentCert {
@@ -271,7 +271,7 @@ public class NativeMessagingHost {
 				throw new Exception("Token too long or too shor.");
 
 			byte[] datetime = req.token.getBytes(StandardCharsets.UTF_8);
-			String payloadAsString = new String(Base64Coder.encode(datetime));
+			String payloadAsString = Base64.getEncoder().encodeToString(datetime);
 
 			TokenResponse tokenresponse = new TokenResponse();
 			for (int i = 0;; i++) {
